@@ -9,5 +9,4 @@ public class Error {
     private Boolean param;
     private Boolean code;
 
-
 }

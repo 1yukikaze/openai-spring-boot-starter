@@ -3,6 +3,7 @@ package io.github.yukikaze.insert_chatgpt.service;
 import io.github.yukikaze.insert_chatgpt.autoconfig.IChatgptProperties;
 import io.github.yukikaze.insert_chatgpt.dto.Listmodels.ListModelsResponse;
 import io.github.yukikaze.insert_chatgpt.dto.chaterror.Error;
+import io.github.yukikaze.insert_chatgpt.dto.chaterror.ErrorResponse;
 import io.github.yukikaze.insert_chatgpt.enums.HeaderTypes;
 import io.github.yukikaze.insert_chatgpt.exception.ChatgptException;
 import jakarta.ws.rs.client.Client;
@@ -36,15 +37,19 @@ public class IChatgptServiceImpl implements IChatgptService {
                     .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
                     .buildGet().submit()
                     .get(20L, SECONDS);
+
             if (response.getStatus() != 200){
                 log.error("chatgpt response error code:{},data:{}" ,response.getStatus() , response.getDate());
-                Error entity = (Error) response.getEntity();
-                throw new ChatgptException(String.valueOf(response.getEntity()));
+                ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
+                response.close();
+                throw new ChatgptException(errorResponse.toString());
             }
             log.info("chatgpt response success code:{},data:{}",response.getStatus(),response.getDate());
-            return (ListModelsResponse) response.getEntity();
+            ListModelsResponse listModelsResponse = response.readEntity(ListModelsResponse.class);
+            response.close();
+            return listModelsResponse;
         } catch (Exception e) {
-            log.error("chatgpt request error",e);
+            log.error("chatgpt listModels error",e);
             throw new RuntimeException(e);
         }
     }
