@@ -1,2 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration =\
 io.github.yukikaze.insert_chatgpt.autoconfig.IChatgptAutoConfiguration
