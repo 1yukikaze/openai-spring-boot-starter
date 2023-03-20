@@ -1,4 +1,4 @@
-package io.github.yukikaze.insert_chatgpt.dto.Listmodels;
+package io.github.yukikaze.insert_chatgpt.dto.listmodels;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
