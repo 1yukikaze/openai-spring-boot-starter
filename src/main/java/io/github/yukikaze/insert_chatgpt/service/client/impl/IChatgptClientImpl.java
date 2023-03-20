@@ -29,6 +29,10 @@ public class IChatgptClientImpl implements IChatgptClient {
         this.openAIOrganization = iChatgptProperties.getOpenAIOrganization();
     }
 
+    /**
+     * response异常处理
+     * @param response response请求
+     */
     public void throwErrorResponse(Response response) {
         log.error("chatgpt response error code:{},data:{}" ,response.getStatus() , response.getDate());
         ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
@@ -47,13 +51,33 @@ public class IChatgptClientImpl implements IChatgptClient {
                     .buildGet().submit()
                     .get(20L, SECONDS);
             if (response.getStatus() != HttpURLConnection.HTTP_OK) throwErrorResponse(response);
-            log.info("chatgpt response success code:{},data:{}",response.getStatus(),response.getDate());
+            log.info("chatgpt listModels success code:{},data:{}",response.getStatus(),response.getDate());
             ListModelsResponse listModelsResponse = response.readEntity(ListModelsResponse.class);
             response.close();
             return listModelsResponse;
         } catch (Exception e) {
             log.error("chatgpt listModels error:",e);
-            throw new RuntimeException(e);
+            throw new ChatgptException(e);
+        }
+    }
+
+    @Override
+    public ListModelsResponse retrieveModel(String modelId) {
+        try (Client client = ClientBuilder.newClient()) {
+            Response response = client.target(URL)
+                    .path("/models/"+modelId)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
+                    .buildGet().submit()
+                    .get(20L, SECONDS);
+            if (response.getStatus() != HttpURLConnection.HTTP_OK) throwErrorResponse(response);
+            log.info("chatgpt retrieveModel success code:{},data:{}",response.getStatus(),response.getDate());
+            ListModelsResponse listModelsResponse = response.readEntity(ListModelsResponse.class);
+            response.close();
+            return listModelsResponse;
+        }catch (Exception e) {
+            log.error("chatgpt retrieveModel error:",e);
+            throw new ChatgptException(e);
         }
     }
 }
