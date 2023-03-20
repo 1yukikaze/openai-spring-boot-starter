@@ -1,7 +1,7 @@
-package io.github.yukikaze.insert_chatgpt.service;
+package io.github.yukikaze.insert_chatgpt.service.client;
 
 import io.github.yukikaze.insert_chatgpt.dto.Listmodels.ListModelsResponse;
 
-public interface IChatgptService {
+public interface IChatgptClient {
     ListModelsResponse listModels();
 }

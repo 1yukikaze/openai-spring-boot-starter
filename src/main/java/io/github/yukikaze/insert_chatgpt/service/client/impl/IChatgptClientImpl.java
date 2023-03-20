@@ -1,11 +1,11 @@
-package io.github.yukikaze.insert_chatgpt.service;
+package io.github.yukikaze.insert_chatgpt.service.client.impl;
 
 import io.github.yukikaze.insert_chatgpt.autoconfig.IChatgptProperties;
 import io.github.yukikaze.insert_chatgpt.dto.Listmodels.ListModelsResponse;
-import io.github.yukikaze.insert_chatgpt.dto.chaterror.Error;
 import io.github.yukikaze.insert_chatgpt.dto.chaterror.ErrorResponse;
 import io.github.yukikaze.insert_chatgpt.enums.HeaderTypes;
 import io.github.yukikaze.insert_chatgpt.exception.ChatgptException;
+import io.github.yukikaze.insert_chatgpt.service.client.IChatgptClient;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.MediaType;
@@ -13,18 +13,27 @@ import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.net.HttpURLConnection;
+
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Slf4j
 @Service
-public class IChatgptServiceImpl implements IChatgptService {
+public class IChatgptClientImpl implements IChatgptClient {
     protected final String URL;
     protected final String authorization;
     protected final String openAIOrganization;
-    public IChatgptServiceImpl(IChatgptProperties iChatgptProperties) {
+    public IChatgptClientImpl(IChatgptProperties iChatgptProperties) {
         this.URL =iChatgptProperties.getURL();
         this.authorization = "Bearer123 "+iChatgptProperties.getAuthorization();
         this.openAIOrganization = iChatgptProperties.getOpenAIOrganization();
+    }
+
+    public void throwErrorResponse(Response response) {
+        log.error("chatgpt response error code:{},data:{}" ,response.getStatus() , response.getDate());
+        ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
+        response.close();
+        throw new ChatgptException(errorResponse.toString());
     }
 
     @Override
@@ -37,19 +46,13 @@ public class IChatgptServiceImpl implements IChatgptService {
                     .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
                     .buildGet().submit()
                     .get(20L, SECONDS);
-
-            if (response.getStatus() != 200){
-                log.error("chatgpt response error code:{},data:{}" ,response.getStatus() , response.getDate());
-                ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
-                response.close();
-                throw new ChatgptException(errorResponse.toString());
-            }
+            if (response.getStatus() != HttpURLConnection.HTTP_OK) throwErrorResponse(response);
             log.info("chatgpt response success code:{},data:{}",response.getStatus(),response.getDate());
             ListModelsResponse listModelsResponse = response.readEntity(ListModelsResponse.class);
             response.close();
             return listModelsResponse;
         } catch (Exception e) {
-            log.error("chatgpt listModels error",e);
+            log.error("chatgpt listModels error:",e);
             throw new RuntimeException(e);
         }
     }
