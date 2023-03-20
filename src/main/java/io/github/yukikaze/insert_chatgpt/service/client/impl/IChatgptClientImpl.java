@@ -4,6 +4,7 @@ import io.github.yukikaze.insert_chatgpt.autoconfig.IChatgptProperties;
 import io.github.yukikaze.insert_chatgpt.dto.chaterror.ErrorResponse;
 import io.github.yukikaze.insert_chatgpt.dto.completions.CompletionRequest;
 import io.github.yukikaze.insert_chatgpt.dto.completions.CompletionResponse;
+import io.github.yukikaze.insert_chatgpt.dto.listmodels.Data;
 import io.github.yukikaze.insert_chatgpt.dto.listmodels.ListModelsResponse;
 import io.github.yukikaze.insert_chatgpt.enums.HeaderTypes;
 import io.github.yukikaze.insert_chatgpt.exception.ChatgptException;
@@ -11,14 +12,16 @@ import io.github.yukikaze.insert_chatgpt.service.client.IChatgptClient;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.sse.SseEventSource;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jersey.media.sse.EventInput;
+import org.glassfish.jersey.media.sse.InboundEvent;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.springframework.stereotype.Service;
 
 import java.net.HttpURLConnection;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -32,7 +35,7 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     public IChatgptClientImpl(IChatgptProperties iChatgptProperties) {
         this.URL = iChatgptProperties.getURL();
-        this.authorization = "Bearer123 " + iChatgptProperties.getAuthorization();
+        this.authorization = "Bearer " + iChatgptProperties.getAuthorization();
         this.openAIOrganization = iChatgptProperties.getOpenAIOrganization();
     }
 
@@ -45,6 +48,7 @@ public class IChatgptClientImpl implements IChatgptClient {
         if (response.getStatus() != HttpURLConnection.HTTP_OK) {
             log.error("chatgpt response error code:{},data:{}", response.getStatus(), response.getDate());
             ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
+            log.error(errorResponse.toString());
             response.close();
             throw new ChatgptException(errorResponse.toString());
         }
@@ -71,7 +75,7 @@ public class IChatgptClientImpl implements IChatgptClient {
     }
 
     @Override
-    public ListModelsResponse retrieveModel(String modelId) {
+    public Data retrieveModel(String modelId) {
         try (Client client = ClientBuilder.newClient()) {
             Response response = client.target(URL)
                     .path("/models/" + modelId)
@@ -81,9 +85,9 @@ public class IChatgptClientImpl implements IChatgptClient {
                     .get(20L, SECONDS);
             Response responseOK = throwErrorResponse(response);
             log.info("chatgpt retrieveModel success code:{},data:{}", responseOK.getStatus(), responseOK.getDate());
-            ListModelsResponse listModelsResponse = responseOK.readEntity(ListModelsResponse.class);
+            Data data = responseOK.readEntity(Data.class);
             responseOK.close();
-            return listModelsResponse;
+            return data;
         } catch (Exception e) {
             throw new ChatgptException(e);
         }
@@ -115,26 +119,26 @@ public class IChatgptClientImpl implements IChatgptClient {
     public LinkedBlockingQueue getCompletionsStream(CompletionRequest request) {
         if (request.getModel() == null) throw new ChatgptException("error:no model,You must select the model to use.");
         if (request.getStream()) {
-            try (Client client = ClientBuilder.newClient()) {
-                WebTarget target = (WebTarget) client.target(URL)
-                        .path("/completions")
+            Client client = ClientBuilder.newBuilder().register(SseFeature.class).build();
+            try {
+                EventInput eventInput = client.target(URL).path("/completions")
                         .request(MediaType.APPLICATION_JSON)
-                        .header(HeaderTypes.AUTHORIZATION.getType(), authorization);
-                SseEventSource eventSource = SseEventSource.target(target).build();
+                        .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
+                        .post(Entity.entity(request, MediaType.APPLICATION_JSON))
+                        .readEntity(EventInput.class);
                 LinkedBlockingQueue<CompletionResponse> queue = new LinkedBlockingQueue<>();
-                eventSource.register(event -> {
-                    if (event.readData().equals("DONE")) eventSource.close();
-                    CompletionResponse response = event.readData(CompletionResponse.class);
-                    try {
-                        queue.put(response);
-                    } catch (InterruptedException e) {
-                        throw new ChatgptException(e);
+                while (!eventInput.isClosed()) {
+                    InboundEvent read = eventInput.read();
+                    if (read.readData() .equals("[DONE]") ) {
+                        eventInput.close();
                     }
-                });
-                eventSource.open();
+                    CompletionResponse readData = read.readData(CompletionResponse.class, MediaType.APPLICATION_JSON_TYPE);
+                    System.out.println(readData);
+                    queue.put(readData);
+                }
                 return queue;
-            } catch (Exception e) {
-                throw new ChatgptException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         } else {
             throw new ChatgptException("warn:The stream is not open, please switch to the 'getCompletions' method.");
