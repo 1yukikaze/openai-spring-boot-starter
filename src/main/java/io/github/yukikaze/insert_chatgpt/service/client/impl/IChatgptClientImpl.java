@@ -21,7 +21,6 @@ import org.glassfish.jersey.media.sse.SseFeature;
 import org.springframework.stereotype.Service;
 
 import java.net.HttpURLConnection;
-import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -116,30 +115,30 @@ public class IChatgptClientImpl implements IChatgptClient {
     }
 
     @Override
-    public LinkedBlockingQueue getCompletionsStream(CompletionRequest request) {
+    public LinkedBlockingQueue<CompletionResponse> getCompletionsStream(CompletionRequest request) {
         if (request.getModel() == null) throw new ChatgptException("error:no model,You must select the model to use.");
         if (request.getStream()) {
             Client client = ClientBuilder.newBuilder().register(SseFeature.class).build();
-            try {
-                EventInput eventInput = client.target(URL).path("/completions")
-                        .request(MediaType.APPLICATION_JSON)
-                        .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
-                        .post(Entity.entity(request, MediaType.APPLICATION_JSON))
-                        .readEntity(EventInput.class);
-                LinkedBlockingQueue<CompletionResponse> queue = new LinkedBlockingQueue<>();
-                while (!eventInput.isClosed()) {
-                    InboundEvent read = eventInput.read();
-                    if (read.readData() .equals("[DONE]") ) {
-                        eventInput.close();
-                    }
-                    CompletionResponse readData = read.readData(CompletionResponse.class, MediaType.APPLICATION_JSON_TYPE);
-                    System.out.println(readData);
-                    queue.put(readData);
+            EventInput eventInput = client.target(URL).path("/completions")
+                    .request(MediaType.APPLICATION_JSON)
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
+                    .post(Entity.entity(request, MediaType.APPLICATION_JSON))
+                    .readEntity(EventInput.class);
+            LinkedBlockingQueue<CompletionResponse> queue = new LinkedBlockingQueue<>();
+            while (!eventInput.isClosed()) {
+                InboundEvent read = eventInput.read();
+                if (read == null) {
+                    throw new ChatgptException("The input data is invalid, please check the configuration.");
                 }
-                return queue;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                if ("[DONE]".equals(read.readData())) {
+                    eventInput.close();
+                    break;
+                }
+                CompletionResponse readData = read.readData(CompletionResponse.class, MediaType.APPLICATION_JSON_TYPE);
+                System.out.println(readData);
+                queue.add(readData);
             }
+            return queue;
         } else {
             throw new ChatgptException("warn:The stream is not open, please switch to the 'getCompletions' method.");
         }

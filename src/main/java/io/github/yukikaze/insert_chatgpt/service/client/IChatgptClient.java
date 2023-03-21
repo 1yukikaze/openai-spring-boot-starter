@@ -37,5 +37,5 @@ public interface IChatgptClient {
      * @param request 传入的参数
      * @return 管道输入流对象
      */
-    LinkedBlockingQueue getCompletionsStream(CompletionRequest request);
+    LinkedBlockingQueue<CompletionResponse> getCompletionsStream(CompletionRequest request);
 }
