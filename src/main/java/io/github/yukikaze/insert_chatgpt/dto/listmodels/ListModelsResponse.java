@@ -1,6 +1,6 @@
 package io.github.yukikaze.insert_chatgpt.dto.listmodels;
 
-import io.github.yukikaze.insert_chatgpt.dto.chaterror.Error;
+import io.github.yukikaze.insert_chatgpt.dto.publicerror.Error;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

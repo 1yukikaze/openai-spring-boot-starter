@@ -1,11 +1,15 @@
 package io.github.yukikaze.insert_chatgpt.service.client.impl;
 
 import io.github.yukikaze.insert_chatgpt.autoconfig.IChatgptProperties;
-import io.github.yukikaze.insert_chatgpt.dto.chaterror.ErrorResponse;
+import io.github.yukikaze.insert_chatgpt.dto.chat.ChatRequest;
+import io.github.yukikaze.insert_chatgpt.dto.chat.ChatResponse;
+import io.github.yukikaze.insert_chatgpt.dto.chat.Choice;
+import io.github.yukikaze.insert_chatgpt.dto.chat.Message;
 import io.github.yukikaze.insert_chatgpt.dto.completions.CompletionRequest;
 import io.github.yukikaze.insert_chatgpt.dto.completions.CompletionResponse;
 import io.github.yukikaze.insert_chatgpt.dto.listmodels.Data;
 import io.github.yukikaze.insert_chatgpt.dto.listmodels.ListModelsResponse;
+import io.github.yukikaze.insert_chatgpt.dto.publicerror.ErrorResponse;
 import io.github.yukikaze.insert_chatgpt.enums.HeaderTypes;
 import io.github.yukikaze.insert_chatgpt.exception.ChatgptException;
 import io.github.yukikaze.insert_chatgpt.service.client.IChatgptClient;
@@ -19,8 +23,14 @@ import org.glassfish.jersey.media.sse.EventInput;
 import org.glassfish.jersey.media.sse.InboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
 import org.springframework.stereotype.Service;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -135,12 +145,73 @@ public class IChatgptClientImpl implements IChatgptClient {
                     break;
                 }
                 CompletionResponse readData = read.readData(CompletionResponse.class, MediaType.APPLICATION_JSON_TYPE);
-                System.out.println(readData);
                 queue.add(readData);
             }
             return queue;
         } else {
             throw new ChatgptException("warn:The stream is not open, please switch to the 'getCompletions' method.");
+        }
+    }
+
+    @Override
+    public ChatResponse getChat(ChatRequest request) {
+        System.out.println(request.toString());
+        String messageUser = null;
+        if (request.getMessageUser() != null) {
+            messageUser = request.getMessageUser();
+            request.setMessageUser(null);
+        }
+        if (request.getModel() == null) throw new ChatgptException("error:no model,You must select the model to use.");
+        if (request.getMessages() == null)
+            throw new ChatgptException("error:no message,You must add a message for the conversation.");
+        if (request.getStream())
+            throw new ChatgptException("warn:Please use the 'getChatStream' method to start a stream.");
+        try (Client client = ClientBuilder.newClient()) {
+            Response response = client.target(URL)
+                    .path("/chat/completions")
+                    .request(MediaType.APPLICATION_JSON)
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
+                    .buildPost(Entity.entity(request, MediaType.APPLICATION_JSON))
+                    .submit().get(20L, SECONDS);
+            Response responseOK = throwErrorResponse(response);
+            log.info("chatgpt getCompletions success code:{},data:{}", responseOK.getStatus(), responseOK.getDate());
+            ChatResponse chatResponse = responseOK.readEntity(ChatResponse.class);
+            responseOK.close();
+
+            // * 存储上下文
+            if (messageUser != null) {
+                File f = new File("ChatUserData");
+                if (!f.exists()) {
+                    boolean dr = f.mkdirs();
+                    log.info("mkdir{}", dr);
+                }
+                File file = new File("ChatUserData/" + messageUser + ".yaml");
+                if (!file.exists()) {
+                    boolean newFile = file.createNewFile();
+                    if (newFile) log.info("New user file has been created.");
+                }
+                Yaml yaml = new Yaml();
+                DumperOptions options = new DumperOptions();
+                options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+                options.setPrettyFlow(true);
+                List<Choice> choices = chatResponse.getChoices();
+                List<Message> messages = request.getMessages();
+                ArrayList<Message> list = new ArrayList<>();
+                Choice choice = choices.get(choices.size() - 1);
+                Message reMessage = choice.getMessage();
+                Message rqMessage = messages.get(messages.size() - 1);
+                list.add(rqMessage);
+                list.add(reMessage);
+                String dump = yaml.dump(list);
+                try (FileWriter fileWriter = new FileWriter(file, true)) {
+                    fileWriter.write(dump);
+                } catch (Exception e) {
+                    throw new ChatgptException(e);
+                }
+            }
+            return chatResponse;
+        } catch (Exception e) {
+            throw new ChatgptException(e);
         }
     }
 }

@@ -1,4 +1,4 @@
-package io.github.yukikaze.insert_chatgpt.dto.chaterror;
+package io.github.yukikaze.insert_chatgpt.dto.publicerror;
 
 import lombok.Data;
 

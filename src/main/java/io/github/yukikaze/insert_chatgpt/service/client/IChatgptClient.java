@@ -1,5 +1,7 @@
 package io.github.yukikaze.insert_chatgpt.service.client;
 
+import io.github.yukikaze.insert_chatgpt.dto.chat.ChatRequest;
+import io.github.yukikaze.insert_chatgpt.dto.chat.ChatResponse;
 import io.github.yukikaze.insert_chatgpt.dto.completions.CompletionRequest;
 import io.github.yukikaze.insert_chatgpt.dto.completions.CompletionResponse;
 import io.github.yukikaze.insert_chatgpt.dto.listmodels.Data;
@@ -28,14 +30,24 @@ public interface IChatgptClient {
     /**
      * 预测并完成,传入预构建的参数以及文本,返回补全结果.
      * @param request 传入的参数
-     * @return 模型实体类
+     * @return 消息实体类
      */
     CompletionResponse getCompletions(CompletionRequest request);
 
     /**
      * 预测并完成,传入预构建的参数以及文本,返回补全结果的阻塞队列
      * @param request 传入的参数
-     * @return 管道输入流对象
+     * @return 阻塞队列
      */
     LinkedBlockingQueue<CompletionResponse> getCompletionsStream(CompletionRequest request);
+
+    /**
+     * chatgpt对话功能,传入预构建参数以及文本,返回对话结果
+     * 上下文功能需要手动启用
+     * @param request 传入的参数
+     * @return 消息实体类
+     */
+    ChatResponse getChat(ChatRequest request);
+
+
 }

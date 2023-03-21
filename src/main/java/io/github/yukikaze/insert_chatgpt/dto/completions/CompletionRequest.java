@@ -14,6 +14,23 @@ import java.util.Map;
 
 @Data
 public class CompletionRequest {
+
+    /**
+     * 添加消息的方便方法
+     * @param prompts 消息体
+     */
+    public void sendMessage(String... prompts) {
+        if (prompt == null) {
+            prompt = new ArrayList<>();
+        }
+        prompt.addAll(Arrays.asList(prompts));
+    }
+
+
+
+
+    
+
     /**
      * model
      * string
@@ -196,14 +213,4 @@ public class CompletionRequest {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String user;
 
-    /**
-     * 添加消息的方便方法
-     * @param prompts 消息体
-     */
-    public void sendMessage(String... prompts) {
-        if (prompt == null) {
-            prompt = new ArrayList<>();
-        }
-        prompt.addAll(Arrays.asList(prompts));
-    }
 }
