@@ -4,18 +4,18 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.1yukikaze</groupId>
-    <artifactId>insert-chatgpt-spring-boot-starter</artifactId>
+    <artifactId>openai-spring-boot-starter</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>insert-chatgpt-spring-boot-starter</name>
+    <name>openai-spring-boot-starter</name>
     <description>A tool that allows for quick use of the ChatGPT interface.</description>
-    <url>https://github.com/1yukikaze/insert-chatgpt-spring-boot-starter</url>
+    <url>https://github.com/1yukikaze/openai-spring-boot-starter</url>
 
     <licenses>
         <license>
             <name>The MIT License (MIT)</name>
-            <url>https://github.com/1yukikaze/insert-chatgpt-spring-boot-starter/blob/main/LICENSE</url>
+            <url>https://github.com/1yukikaze/openai-spring-boot-starter/blob/main/LICENSE</url>
         </license>
     </licenses>
 
