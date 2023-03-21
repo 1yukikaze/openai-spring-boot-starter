@@ -25,10 +25,24 @@ public class ChatRequest {
     }
 
     /**
-     * 设置上下文消息的用户解决上下文冲突
+     * 设置上下文消息的用户 解决上下文冲突
+     * 开启上下文会生成 yaml文件保存用户聊天记录
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String messageUser;
+
+    /**
+     * 删除用户上下文(相当于结束当前对话)
+     */
+    public void deleteUserData(String messageUser) {
+        File file = new File("ChatUserData/" + messageUser + ".yaml");
+        if (!file.exists()) {
+            log.error("No current user file.");
+            return;
+        }
+        boolean delete = file.delete();
+        if (delete) log.info("The conversation with user {} has been closed.", messageUser);
+    }
 
     /**
      * 设置Chat预设(给AI加入对话风格)
@@ -60,7 +74,7 @@ public class ChatRequest {
      * 关联上下文的状态下发送一条消息 (默认关联一组上下文)
      *
      * @param message     对话消息字符串
-     * @param messageUser 开启上下文并设置用户
+     * @param messageUser 开启上下文->设置用户
      */
     public void sendMessage(String message, String messageUser) {
         if (!messageUser.matches("^[a-zA-Z0-9]*$")) {
@@ -70,6 +84,7 @@ public class ChatRequest {
         File file = new File("ChatUserData/" + messageUser + ".yaml");
         if (!file.exists()) {
             this.sendMessage(message);
+            return;
         }
         Yaml yaml = new Yaml();
         try {
@@ -89,8 +104,8 @@ public class ChatRequest {
      * 关联上下文的状态下发送一条消息 设置关联条数
      *
      * @param message     对话消息字符串
-     * @param messageUser 开启上下文并设置用户
-     * @param contextNum  上下文关联组数
+     * @param messageUser 开启上下文-?设置用户
+     * @param contextNum  上下文关联组数(有可能会超过token上限)
      */
     public void sendMessage(String message, String messageUser, Integer contextNum) {
         switch (contextNum) {
@@ -103,14 +118,15 @@ public class ChatRequest {
                 return;
             }
         }
+        File file = new File("ChatUserData/" + messageUser + ".yaml");
+        if (!file.exists()) {
+            this.sendMessage(message, messageUser);
+            return;
+        }
         if (!messageUser.matches("^[a-zA-Z0-9]*$")) {
             throw new ChatgptException("'messageUser' can only contain letters and numbers.");
         }
         this.messageUser = messageUser;
-        File file = new File("ChatUserData/" + messageUser + ".yaml");
-        if (!file.exists()) {
-            this.sendMessage(message);
-        }
         Yaml yaml = new Yaml();
         try {
             FileInputStream fileInputStream = new FileInputStream(file);
@@ -127,15 +143,14 @@ public class ChatRequest {
             }
             if (this.messages == null) this.messages = new ArrayList<>();
             for (int i = contextNum; i > 0; i--) {
-            this.messages.add(load.get(load.size() - 2 * i));
-            this.messages.add(load.get(load.size() - 2 * i + 1));
+                this.messages.add(load.get(load.size() - 2 * i));
+                this.messages.add(load.get(load.size() - 2 * i + 1));
             }
             sendMessage(message);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
-
 
     /**
      * model
