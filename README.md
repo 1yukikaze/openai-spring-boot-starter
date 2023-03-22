@@ -43,7 +43,6 @@ private IChatgptClient ichatgptClient;
 
 实体类与装配方法位置:
 *io/github/yukikaze/insert_chatgpt/dto/*
-openAI官方有着大量的参数配置选项,但大部分都不是必须的,你可以参考实体类的配置文档进行自行定义配置
 
 模型枚举位置
 *io/github/yukikaze/insert_chatgpt/enums/Models/*
