@@ -1,11 +1,11 @@
 # openai-spring-boot-starter
 **A tool that connects to the OpenAI API.**
 
-基于Jersey Client服务与springboot整合框架提供的开箱即用的openAI快速调用工具.
+基于Jersey Client服务与springboot整合框架提供的openAI快速调用工具.
 
 ### 快速开始
 
-**1.导入pom.xml文件**
+**1.导入pom依赖**
 
 ```xml
 <dependency>
@@ -15,15 +15,15 @@
 </dependency>
 ```
 
-**2.配置yaml文件**
+**2.配置application.yaml文件**
 
 ```yaml
 chatgpt:
 	#配置连接URL地址,可以选择配置反向代理地址,默认为官方地址
   URL: "https://api.openai.com/v1" 
-  	#你的API密匙
+  	#你的API-key
   authorization: "sk-**************************************"
-   	#可选: 你的组织名
+   	#可选: 你的组织标头
 #  openAIOrganization: "***************"
 ```
 
@@ -39,13 +39,13 @@ private IChatgptClient ichatgptClient;
 方法接口与实体类均遵守命名规范有迹可循
 
 接口与实现方法位置:
-<u>io/github/yukikaze/insert_chatgpt/service/client/</u>
+*io/github/yukikaze/insert_chatgpt/service/client/*
 
 实体类与装配方法位置:
-<u>io/github/yukikaze/insert_chatgpt/dto/</u>
+*io/github/yukikaze/insert_chatgpt/dto/*
 
-模型枚举类位置
-<u>io/github/yukikaze/insert_chatgpt/enums/Models/</u>
+模型枚举位置
+*io/github/yukikaze/insert_chatgpt/enums/Models/*
 
 如有更多疑问请转至openAI官方文档:[API Reference - OpenAI API](https://platform.openai.com/docs/api-reference)
 
@@ -95,6 +95,7 @@ public void completionStreamTest() {
     response.setModel(completionModels.TEXT_DAVINCI_002.getModels());
     response.sendMessage("你好");
     response.setStream(true);
+    //调用SSE协议模式的方法
     LinkedBlockingQueue<CompletionResponse> completionsStream = ichatgptClient.getCompletionsStream(response);
     for (CompletionResponse completionResponse : completionsStream) {
         System.out.println(completionResponse.toString());
@@ -107,15 +108,17 @@ public void completionStreamTest() {
 ```java
 @Test
 public void chatTest() {
+    //新建实体类并导入参数
     ChatRequest chatRequest = new ChatRequest();
     chatRequest.setModel(chatModels.GPT_3_5_TURBO.getModels());
     chatRequest.setSystemMessage("请尽量说的简洁点,用中文回复");
     chatRequest.sendMessage("你好");
+    //发送
     ChatResponse chat = ichatgptClient.getChat(chatRequest);
     System.out.println(chat);
 ```
 
-如果你需要开启上下文对话:
+如果你需要开启关联上下文模式:
 
 ```java
 @Test
@@ -131,7 +134,7 @@ public void chatTest() {
 }
 ```
 
-上下文默认关联一条,如果你想关联更多上下文的话:
+上下文默认关联一条,如果你想关联更多上下文关系:
 
 ```java
 chatRequest.sendMessage("你好","user",4);
