@@ -115,7 +115,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--github上传插件,用于修改后的发布,执行 mvn clean deploy 自动打包上传到github-->
             <plugin>
                 <groupId>com.github.github</groupId>
                 <artifactId>site-maven-plugin</artifactId>
@@ -123,17 +122,13 @@
                 <configuration>
                     <message >Maven artifacts for ${project.version}</message>
                     <noJekyll>true</noJekyll>
-                    <!--本地jar地址-->
                     <outputDirectory>${project.build.directory}/repository</outputDirectory>
-                    <!--分支-->
                     <branch>refs/origin/master</branch>
                     <merge>true</merge>
                     <includes>
                         <include>**/*</include>
                     </includes>
-                    <!--对应github上创建的仓库名称 name-->
                     <repositoryName>openai-spring-boot-starter</repositoryName>
-                    <!--github 仓库所有者 不是账号-->
                     <repositoryOwner>1yukikaze</repositoryOwner>
                 </configuration>
                 <executions>
