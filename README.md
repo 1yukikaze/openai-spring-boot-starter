@@ -19,11 +19,11 @@
 
 ```yaml
 chatgpt:
-	#配置连接URL地址,可以选择配置反向代理地址,默认为官方地址
+  #配置连接URL地址,可以选择配置反向代理地址,默认为官方地址
   URL: "https://api.openai.com/v1" 
-  	#你的API-key
+  #你的API-key
   authorization: "sk-**************************************"
-   	#可选: 你的组织标头
+#  #可选: 你的组织标头
 #  openAIOrganization: "***************"
 ```
 
