@@ -30,6 +30,11 @@
     <description>A tool that connects to the OpenAI API.</description>
     <url>https://github.com/1yukikaze/openai-spring-boot-starter</url>
 
+    <scm>
+        <url>https://github.com/1yukikaze/openai-spring-boot-starter</url>
+        <connection>https://github.com/1yukikaze/openai-spring-boot-starter.git</connection>
+        <developerConnection>https://github.com/1yukikaze/openai-spring-boot-starter.git</developerConnection>
+    </scm>
     <licenses>
         <license>
             <name>The MIT License (MIT)</name>
