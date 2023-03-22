@@ -16,6 +16,7 @@ import io.github.yukikaze.insert_chatgpt.service.client.IChatgptClient;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
@@ -67,12 +68,14 @@ public class IChatgptClientImpl implements IChatgptClient {
     @Override
     public ListModelsResponse listModels() {
         try (Client client = ClientBuilder.newClient()) {
-            Response response = client.target(URL)
+            Invocation.Builder header = client.target(URL)
                     .path("/models")
                     .request(MediaType.APPLICATION_JSON_TYPE)
-                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
-                    .buildGet().submit()
-                    .get(20L, SECONDS);
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization);
+            if (openAIOrganization != null) {
+                header = header.header(HeaderTypes.OPENAI_ORGANIZATION.getType(), openAIOrganization);
+            }
+            Response response = header.buildGet().submit().get(20L, SECONDS);
             Response responseOK = throwErrorResponse(response);
             log.info("chatgpt listModels success code:{},data:{}", responseOK.getStatus(), responseOK.getDate());
             ListModelsResponse listModelsResponse = responseOK.readEntity(ListModelsResponse.class);
@@ -85,14 +88,16 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public Data retrieveModel(String modelId) {
-        log.info("Start processing the request:{}",modelId);
+        log.info("Start processing the request:{}", modelId);
         try (Client client = ClientBuilder.newClient()) {
-            Response response = client.target(URL)
+            Invocation.Builder header = client.target(URL)
                     .path("/models/" + modelId)
                     .request(MediaType.APPLICATION_JSON_TYPE)
-                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
-                    .buildGet().submit()
-                    .get(20L, SECONDS);
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization);
+            if (openAIOrganization != null) {
+                header = header.header(HeaderTypes.OPENAI_ORGANIZATION.getType(), openAIOrganization);
+            }
+            Response response = header.buildGet().submit().get(20L, SECONDS);
             Response responseOK = throwErrorResponse(response);
             log.info("chatgpt retrieveModel success code:{},data:{}", responseOK.getStatus(), responseOK.getDate());
             Data data = responseOK.readEntity(Data.class);
@@ -105,17 +110,19 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public CompletionResponse getCompletions(CompletionRequest request) {
-        log.info("Start processing the request:{}",request);
+        log.info("Start processing the request:{}", request);
         if (request.getModel() == null) throw new ChatgptException("error:no model,You must select the model to use.");
         if (request.getStream())
             throw new ChatgptException("warn:Please use the 'getCompletionsStream' method to start a stream.");
         try (Client client = ClientBuilder.newClient()) {
-            Response response = client.target(URL)
+            Invocation.Builder header = client.target(URL)
                     .path("/completions")
                     .request(MediaType.APPLICATION_JSON)
-                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
-                    .buildPost(Entity.entity(request, MediaType.APPLICATION_JSON))
-                    .submit().get(20L, SECONDS);
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization);
+            if (openAIOrganization != null) {
+                header = header.header(HeaderTypes.OPENAI_ORGANIZATION.getType(), openAIOrganization);
+            }
+            Response response = header.buildPost(Entity.entity(request, MediaType.APPLICATION_JSON)).submit().get(20L, SECONDS);
             Response responseOK = throwErrorResponse(response);
             log.info("chatgpt getCompletions success code:{},data:{}", responseOK.getStatus(), responseOK.getDate());
             CompletionResponse completionResponse = responseOK.readEntity(CompletionResponse.class);
@@ -128,15 +135,17 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public LinkedBlockingQueue<CompletionResponse> getCompletionsStream(CompletionRequest request) {
-        log.info("Start processing the request:{}",request);
+        log.info("Start processing the request:{}", request);
         if (request.getModel() == null) throw new ChatgptException("error:no model,You must select the model to use.");
         if (request.getStream()) {
             Client client = ClientBuilder.newBuilder().register(SseFeature.class).build();
-            EventInput eventInput = client.target(URL).path("/completions")
+            Invocation.Builder header = client.target(URL).path("/completions")
                     .request(MediaType.APPLICATION_JSON)
-                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
-                    .post(Entity.entity(request, MediaType.APPLICATION_JSON))
-                    .readEntity(EventInput.class);
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization);
+            if (openAIOrganization != null) {
+                header = header.header(HeaderTypes.OPENAI_ORGANIZATION.getType(), openAIOrganization);
+            }
+            EventInput eventInput = header.post(Entity.entity(request, MediaType.APPLICATION_JSON)).readEntity(EventInput.class);
             LinkedBlockingQueue<CompletionResponse> queue = new LinkedBlockingQueue<>();
             while (!eventInput.isClosed()) {
                 InboundEvent read = eventInput.read();
@@ -158,7 +167,7 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public ChatResponse getChat(ChatRequest request) {
-        log.info("Start processing the request:{}",request);
+        log.info("Start processing the request:{}", request);
         String messageUser = null;
         if (request.getMessageUser() != null) {
             messageUser = request.getMessageUser();
@@ -170,11 +179,14 @@ public class IChatgptClientImpl implements IChatgptClient {
         if (request.getStream())
             throw new ChatgptException("warn:Please use the 'getChatStream' method to start a stream.");
         try (Client client = ClientBuilder.newClient()) {
-            Response response = client.target(URL)
+            Invocation.Builder header = client.target(URL)
                     .path("/chat/completions")
                     .request(MediaType.APPLICATION_JSON)
-                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization)
-                    .buildPost(Entity.entity(request, MediaType.APPLICATION_JSON))
+                    .header(HeaderTypes.AUTHORIZATION.getType(), authorization);
+            if (openAIOrganization != null) {
+                header = header.header(HeaderTypes.OPENAI_ORGANIZATION.getType(), openAIOrganization);
+            }
+            Response response = header.buildPost(Entity.entity(request, MediaType.APPLICATION_JSON))
                     .submit().get(20L, SECONDS);
             Response responseOK = throwErrorResponse(response);
             log.info("chatgpt getCompletions success code:{},data:{}", responseOK.getStatus(), responseOK.getDate());
