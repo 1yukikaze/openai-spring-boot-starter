@@ -47,7 +47,8 @@ private IChatgptClient ichatgptClient;
 模型枚举位置
 *io/github/yukikaze/insert_chatgpt/enums/Models/*
 
-如有更多疑问请转至openAI官方文档:[API Reference - OpenAI API](https://platform.openai.com/docs/api-reference)
+openAI接口有着大量的参数配置选项,但大部分都不是必须的,你可以参考实体类的配置文档进行自行定义配置,以下只演示最简单的方法实现.
+如有疑问请转至openAI官方文档:[API Reference - OpenAI API](https://platform.openai.com/docs/api-reference)
 
 **1.查看官方模型列表**
 
