@@ -43,6 +43,7 @@ private IChatgptClient ichatgptClient;
 
 实体类与装配方法位置:
 *io/github/yukikaze/insert_chatgpt/dto/*
+openAI官方有着大量的参数配置选项,但大部分都不是必须的,你可以参考实体类的配置文档进行自行定义配置
 
 模型枚举位置
 *io/github/yukikaze/insert_chatgpt/enums/Models/*
@@ -110,7 +111,9 @@ public void completionStreamTest() {
 public void chatTest() {
     //新建实体类并导入参数
     ChatRequest chatRequest = new ChatRequest();
+    //选择对话模型(必填)
     chatRequest.setModel(chatModels.GPT_3_5_TURBO.getModels());
+    //设置chat风格(可选)
     chatRequest.setSystemMessage("请尽量说的简洁点,用中文回复");
     chatRequest.sendMessage("你好");
     //发送
@@ -127,14 +130,14 @@ public void chatTest() {
     chatRequest.setModel(chatModels.GPT_3_5_TURBO.getModels());
     chatRequest.setSystemMessage("请尽量说的简洁点,用中文回复");
     
-    //仅仅需要设置用户名,方便该工具识别开启上下文的用户并在存储"ChatUserData/{messageUser}.yaml文件
+    //仅仅需要设置用户名,方便该工具识别开启上下文的用户并存储在 ChatUserData/{messageUser}.yaml 文件中
     chatRequest.sendMessage("你好","user");
     ChatResponse chat = ichatgptClient.getChat(chatRequest);
     System.out.println(chat);
 }
 ```
 
-上下文默认关联一条,如果你想关联更多上下文关系:
+上下文默认关联一组,如果你想关联更多上下文关系:
 
 ```java
 chatRequest.sendMessage("你好","user",4);
@@ -144,7 +147,7 @@ chatRequest.sendMessage("你好","user",4);
 
 **<u>请注意:该方式会消耗大量token并有可能超过官方设置的token最大请求数</u>**
 
-结束对话(删除用户文档):
+结束上下文关联对话(删除用户文档):
 
 ```
 chatRequest.deleteUserData("user");
