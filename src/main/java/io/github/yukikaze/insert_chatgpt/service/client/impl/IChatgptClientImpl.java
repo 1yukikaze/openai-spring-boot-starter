@@ -85,6 +85,7 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public Data retrieveModel(String modelId) {
+        log.info("Start processing the request:{}",modelId);
         try (Client client = ClientBuilder.newClient()) {
             Response response = client.target(URL)
                     .path("/models/" + modelId)
@@ -104,6 +105,7 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public CompletionResponse getCompletions(CompletionRequest request) {
+        log.info("Start processing the request:{}",request);
         if (request.getModel() == null) throw new ChatgptException("error:no model,You must select the model to use.");
         if (request.getStream())
             throw new ChatgptException("warn:Please use the 'getCompletionsStream' method to start a stream.");
@@ -126,6 +128,7 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public LinkedBlockingQueue<CompletionResponse> getCompletionsStream(CompletionRequest request) {
+        log.info("Start processing the request:{}",request);
         if (request.getModel() == null) throw new ChatgptException("error:no model,You must select the model to use.");
         if (request.getStream()) {
             Client client = ClientBuilder.newBuilder().register(SseFeature.class).build();
@@ -155,7 +158,7 @@ public class IChatgptClientImpl implements IChatgptClient {
 
     @Override
     public ChatResponse getChat(ChatRequest request) {
-        System.out.println(request.toString());
+        log.info("Start processing the request:{}",request);
         String messageUser = null;
         if (request.getMessageUser() != null) {
             messageUser = request.getMessageUser();
